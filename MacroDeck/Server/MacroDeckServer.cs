@@ -37,20 +37,14 @@ public class MacroDeckServer : IObservable<RpcAction>
     public WebSocketServer? WebSocketServer { get; private set; }
 
     public List<MacroDeckClient> Clients { get; } = new();
-    private List<IObserver<RpcAction>> Observers { get; }
+    private List<IObserver<RpcAction>> Observers { get; } = new();
 
-    private IRpcHandler _rpcHandler;
-    private RCPHandlerFactoryHelper _factoryHelper;
-    private IRpcHandlerFactory _rpcHandlerFactory;
-    private RpcDispatcher _rcpDispatcher;
-    
     public MacroDeckServer()
     {
-        // TODO: Add handler factory
-
-        // _factoryHelper = new (/*Add IServices*/);
-        // _rpcHandlerFactory = new RpcHandlerFactory(_factoryHelper.GetHandlers);
-        // _rcpDispatcher = new RpcDispatcher(_rpcHandlerFactory);
+        var factoryHelper = new RCPHandlerFactoryHelper();
+         IRpcHandlerFactory rpcHandlerFactory = new RpcHandlerFactory(factoryHelper.GetHandlers);
+         var rcpDispatcher = new RpcDispatcher(rpcHandlerFactory);
+         Subscribe(rcpDispatcher);
     }
 
     public IDisposable Subscribe(IObserver<RpcAction> observer)
@@ -156,12 +150,12 @@ public class MacroDeckServer : IObservable<RpcAction>
         var responseObject = JObject.Parse(jsonMessageString);
         if (macroDeckClient.ProtocolVersion == DeviceProtocolVersion.Unknown)
         {
-            if (responseObject["Method"] != null)
-            {
-                macroDeckClient.ProtocolVersion = DeviceProtocolVersion.V2;
-            } else if (responseObject["jsonrpc"] != null)
+            if (responseObject["jsonrpc"] != null)
             {
                 macroDeckClient.ProtocolVersion = DeviceProtocolVersion.V3;
+            } else if (responseObject["Method"] != null)
+            {
+                macroDeckClient.ProtocolVersion = DeviceProtocolVersion.V2;
             }
         }
 
@@ -182,6 +176,7 @@ public class MacroDeckServer : IObservable<RpcAction>
 
     private Task ProcessV3Async(MacroDeckClient macroDeckClient, string message)
     {
+        MacroDeckLogger.Trace(message);
         return Run(() =>
         {
             try
@@ -196,11 +191,11 @@ public class MacroDeckServer : IObservable<RpcAction>
                     {
                         var response = new Response { Id = request.Id, Result = result };
                         
-                        macroDeckClient.SocketConnection?.Send(JsonSerializer.SerializeToUtf8Bytes(response));
+                        macroDeckClient.SocketConnection?.Send(JsonSerializer.Serialize(response));
                         return CompletedTask;
                     }
 
-                    var actionable = new RpcAction(request, Callback);
+                    var actionable = new RpcAction(macroDeckClient, request, Callback);
                     observer.OnNext(actionable);
                 }
             }
@@ -235,7 +230,7 @@ public class MacroDeckServer : IObservable<RpcAction>
         }
 
         var response = new Response { Error = error, Id = id };
-        macroDeckClient.SocketConnection?.Send(JsonSerializer.SerializeToUtf8Bytes(response));
+        macroDeckClient.SocketConnection?.Send(JsonSerializer.Serialize(response));
     }
 
     private Task ProcessV2Async(MacroDeckClient macroDeckClient, JObject responseObject)
@@ -257,7 +252,7 @@ public class MacroDeckServer : IObservable<RpcAction>
                         return;
                     }
 
-                    macroDeckClient.SetClientId(responseObject["Client-Id"].ToString());
+                    macroDeckClient.ClientId = responseObject["Client-Id"].ToString();
 
                     MacroDeckLogger.Info("Connection request from " + macroDeckClient.ClientId);
 

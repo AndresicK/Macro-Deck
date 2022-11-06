@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 using MacroDeck.RPC.Exceptions;
+using SuchByte.MacroDeck.Server;
 
 namespace SuchByte.MacroDeck.Interfaces;
 
@@ -13,7 +9,7 @@ public interface IRpcHandler
 {
     string Command { get; }
 
-    object? Do(JsonNode? args);
+    object? Do(object? client, JsonNode? args);
 
 
     [DoesNotReturn]
@@ -21,7 +17,17 @@ public interface IRpcHandler
     {
         if (args is null)
         {
-            throw new ActionInvalidRequestException("Params");
+            throw new ActionInvalidRequestException("params");
         }
     }
+
+    [DoesNotReturn]
+    protected static void ThrowIfClientNull(object? client)
+    {
+        if (client is null)
+        {
+            throw new ActionInvalidRequestException("id");
+        }
+    }
+    
 }

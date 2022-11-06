@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using CefSharp.DevTools.Profiler;
 using SuchByte.MacroDeck.Interfaces;
 
 namespace SuchByte.MacroDeck.Factories;
@@ -12,6 +11,7 @@ public class RCPHandlerFactoryHelper
     // private readonly IPageService PageService;
     // private readonly IProfileService ProfileService;
     // private readonly IWidgetService WidgetService;
+    
     private readonly IEnumerable<Type> handlers;
     
     public RCPHandlerFactoryHelper(/*Add IServices*/)
@@ -22,9 +22,10 @@ public class RCPHandlerFactoryHelper
                   type.IsAssignableTo(typeof(IRpcHandler))
             select type;
     }
+
     public IEnumerable<IRpcHandler> GetHandlers()
     {
-        return handlers.Select(handler => (IRpcHandler)Activator.CreateInstance(handler, GetInitializationService(handler)));
+        return handlers.Select(handler => (IRpcHandler)Activator.CreateInstance(handler));
     }
 
     private object GetInitializationService(Type handler)

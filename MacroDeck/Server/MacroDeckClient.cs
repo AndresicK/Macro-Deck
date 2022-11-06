@@ -1,6 +1,4 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using Fleck;
+﻿using Fleck;
 using SuchByte.MacroDeck.Device;
 using SuchByte.MacroDeck.Enums;
 using SuchByte.MacroDeck.Folders;
@@ -18,21 +16,16 @@ public class MacroDeckClient
     {
         SocketConnection = socket;
     }
-
-    public void SetClientId(string clientId)
-    {
-        ClientId = clientId;
-    }
-
+    
     public IWebSocketConnection SocketConnection { get; }
 
     public MacroDeckFolder Folder { get; set; }
 
     public MacroDeckProfile Profile { get; set; }
 
-    public string ClientId { get; private set; }
+    public string ClientId { get; set; }
 
-    public DeviceProtocolVersion ProtocolVersion { get; set; } = DeviceProtocolVersion.V2;
+    public DeviceProtocolVersion ProtocolVersion { get; set; } = DeviceProtocolVersion.Unknown;
 
     public DeviceClass DeviceClass { get; set; } = DeviceClass.SoftwareClient;
 

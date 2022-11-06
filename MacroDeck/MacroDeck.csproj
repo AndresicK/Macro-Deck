@@ -388,10 +388,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Server\V3\Handlers\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\MacroDeck.RPC\MacroDeck.RPC.csproj" />
   </ItemGroup>
 

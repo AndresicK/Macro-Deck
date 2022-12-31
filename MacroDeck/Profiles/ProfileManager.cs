@@ -103,7 +103,7 @@ public static class ProfileManager
                 actionButton.LabelOn.LabelBase64 = Base64.GetBase64FromImage(LabelGenerator.GetLabel(new Bitmap(250, 250), labelOnText, actionButton.LabelOn.LabelPosition, new Font(actionButton.LabelOn.FontFamily, actionButton.LabelOn.Size), actionButton.LabelOn.LabelColor, Color.Black, new SizeF(2.0f, 2.0f)));
                 foreach (var macroDeckClient in MacroDeckServer.Instance.Clients)
                 {
-                    MacroDeckServer.Instance.SendButton(macroDeckClient, actionButton);
+                    Task.Run(() => MacroDeckServer.SendButtonAsync(macroDeckClient, actionButton));
                 }
             }
             catch
@@ -382,19 +382,22 @@ public static class ProfileManager
         return DateTimeOffset.Now.ToUnixTimeMilliseconds() + rgx.Replace(folderName.ToLower(), "");
     }
 
-    public static MacroDeckFolder FindFolderById(string Id, MacroDeckProfile macroDeckProfile) => 
+    public static MacroDeckProfile? FindProfileByFolder(MacroDeckFolder folder) =>
+        Profiles.FirstOrDefault(profile => profile.Folders.Contains(folder));
+
+    public static MacroDeckFolder? FindFolderById(string Id, MacroDeckProfile macroDeckProfile) => 
         macroDeckProfile.Folders.Find(macroDeckFolder => macroDeckFolder.FolderId.Equals(Id));
 
 
-    public static MacroDeckFolder FindFolderByDisplayName(string displayName, MacroDeckProfile macroDeckProfile) => 
+    public static MacroDeckFolder? FindFolderByDisplayName(string displayName, MacroDeckProfile macroDeckProfile) => 
         macroDeckProfile.Folders.Find(macroDeckFolder => macroDeckFolder.DisplayName.Equals(displayName));
 
-    public static ActionButton.ActionButton FindActionButton(MacroDeckFolder folder, int row, int col) => 
+    public static ActionButton.ActionButton? FindActionButton(MacroDeckFolder folder, int row, int col) => 
         folder.ActionButtons.Find(actionButton => actionButton.Position_X == col && actionButton.Position_Y == row);
 
-    public static MacroDeckProfile FindProfileById(string id) => 
+    public static MacroDeckProfile? FindProfileById(string id) => 
         Profiles.Find(macroDeckProfile => macroDeckProfile.ProfileId.Equals(id));
 
-    public static MacroDeckProfile FindProfileByDisplayName(string displayName) => 
+    public static MacroDeckProfile? FindProfileByDisplayName(string displayName) => 
         Profiles.Find(macroDeckProfile => macroDeckProfile.DisplayName.Equals(displayName));
 }

@@ -20,9 +20,14 @@ using SuchByte.MacroDeck.Profiles;
 using static System.Threading.Tasks.Task;
 using MessageBox = SuchByte.MacroDeck.GUI.CustomControls.MessageBox;
 using System.Text.Json.Nodes;
+using MacroDeck.RPC.Models;
 using SuchByte.MacroDeck.Factories;
 using SuchByte.MacroDeck.Interfaces;
 using SuchByte.MacroDeck.Server.V3;
+using SuchByte.MacroDeck.Utils;
+using SuchByte.MacroDeck.Icons;
+using System.Collections.Concurrent;
+using SuchByte.MacroDeck.Parsers;
 
 namespace SuchByte.MacroDeck.Server;
 
@@ -147,13 +152,13 @@ public class MacroDeckServer : IObservable<RpcAction>
 
     private void OnMessage(MacroDeckClient macroDeckClient, string jsonMessageString)
     {
-        var responseObject = JObject.Parse(jsonMessageString);
+        var jsonObject = JObject.Parse(jsonMessageString);
         if (macroDeckClient.ProtocolVersion == DeviceProtocolVersion.Unknown)
         {
-            if (responseObject["jsonrpc"] != null)
+            if (jsonObject["jsonrpc"] != null)
             {
                 macroDeckClient.ProtocolVersion = DeviceProtocolVersion.V3;
-            } else if (responseObject["Method"] != null)
+            } else if (jsonObject["Method"] != null)
             {
                 macroDeckClient.ProtocolVersion = DeviceProtocolVersion.V2;
             }
@@ -162,18 +167,15 @@ public class MacroDeckServer : IObservable<RpcAction>
         switch (macroDeckClient.ProtocolVersion)
         {
             case DeviceProtocolVersion.V2:
-                Task.Run(() => ProcessV2Async(macroDeckClient, responseObject));
+                Run(() => ProcessV2Async(macroDeckClient, jsonObject));
                 break;
             case DeviceProtocolVersion.V3:
-                Task.Run(() => ProcessV3Async(macroDeckClient, jsonMessageString));
-                break;
-            case DeviceProtocolVersion.Unknown:
-            default:
-                // ignored
+                Run(() => ProcessV3Async(macroDeckClient, jsonMessageString));
                 break;
         }
     }
 
+    #region Process v3 request
     private Task ProcessV3Async(MacroDeckClient macroDeckClient, string message)
     {
         MacroDeckLogger.Trace(message);
@@ -190,7 +192,7 @@ public class MacroDeckServer : IObservable<RpcAction>
                     Task Callback(object? result)
                     {
                         var response = new Response { Id = request.Id, Result = result };
-                        
+
                         macroDeckClient.SocketConnection?.Send(JsonSerializer.Serialize(response));
                         return CompletedTask;
                     }
@@ -224,40 +226,42 @@ public class MacroDeckServer : IObservable<RpcAction>
             var root = JsonNode.Parse(message);
             id = root?["Id"]?.ToString();
         }
-        catch (Exception)
+        catch
         {
-            /* do nothing */
+            // ignored
         }
 
         var response = new Response { Error = error, Id = id };
         macroDeckClient.SocketConnection?.Send(JsonSerializer.Serialize(response));
     }
-
-    private Task ProcessV2Async(MacroDeckClient macroDeckClient, JObject responseObject)
+    #endregion
+    
+    #region Process v2 request
+    private Task ProcessV2Async(MacroDeckClient macroDeckClient, JObject jsonObject)
     {
         return Run(() =>
         {
-            if (responseObject["Method"] == null) return;
+            if (jsonObject["Method"] == null) return;
 
-            if (!Enum.TryParse<JsonMethod>(responseObject["Method"].ToString(), out var method)) return;
+            if (!Enum.TryParse<JsonMethod>(jsonObject["Method"].ToString(), out var method)) return;
 
             MacroDeckLogger.Trace("Received method: " + method);
 
             switch (method)
             {
                 case JsonMethod.CONNECTED:
-                    if (responseObject["API"] == null || responseObject["Client-Id"] == null || responseObject["Device-Type"] == null || responseObject["API"].ToObject<int>() < MacroDeck.ApiVersion)
+                    if (jsonObject["API"] == null || jsonObject["Client-Id"] == null || jsonObject["Device-Type"] == null || jsonObject["API"].ToObject<int>() < MacroDeck.ApiVersion)
                     {
                         CloseClient(macroDeckClient);
                         return;
                     }
 
-                    macroDeckClient.ClientId = responseObject["Client-Id"].ToString();
+                    macroDeckClient.ClientId = jsonObject["Client-Id"].ToString();
 
                     MacroDeckLogger.Info("Connection request from " + macroDeckClient.ClientId);
 
                     var deviceType = DeviceType.Unknown;
-                    Enum.TryParse(responseObject["Device-Type"].ToString(), out deviceType);
+                    Enum.TryParse(jsonObject["Device-Type"].ToString(), out deviceType);
                     macroDeckClient.DeviceType = deviceType;
 
                     if (!DeviceManager.RequestConnection(macroDeckClient))
@@ -290,7 +294,7 @@ public class MacroDeckServer : IObservable<RpcAction>
                     macroDeckClient.DeviceMessage.Connected(macroDeckClient);
 
 
-                    OnDeviceConnectionStateChanged?.Invoke(macroDeckClient, EventArgs.Empty);
+                    InvokeOnDeviceConnectionStateChanged(macroDeckClient);
                     MacroDeckLogger.Info(macroDeckClient.ClientId + " connected");
                     break;
                 case JsonMethod.BUTTON_PRESS:
@@ -309,8 +313,8 @@ public class MacroDeckServer : IObservable<RpcAction>
                     try
                     {
                         if (macroDeckClient == null || macroDeckClient.Folder == null || macroDeckClient.Folder.ActionButtons == null) return;
-                        var row = int.Parse(responseObject["Message"].ToString().Split('_')[0]);
-                        var column = int.Parse(responseObject["Message"].ToString().Split('_')[1]);
+                        var row = int.Parse(jsonObject["Message"].ToString().Split('_')[0]);
+                        var column = int.Parse(jsonObject["Message"].ToString().Split('_')[1]);
 
                         var actionButton = macroDeckClient.Folder.ActionButtons.Find(aB => aB.Position_X == column && aB.Position_Y == row);
                         if (actionButton != null)
@@ -324,14 +328,13 @@ public class MacroDeckServer : IObservable<RpcAction>
                     }
                     break;
                 case JsonMethod.GET_BUTTONS:
-                    Task.Run(() =>
-                    {
-                        SendAllButtons(macroDeckClient);
-                    });
+                    Run(() => SendAllButtonsAsync(macroDeckClient));
                     break;
             }
         });
     }
+    #endregion
+
 
     internal void Execute(ActionButton.ActionButton actionButton, string clientId, ButtonPressType buttonPressType)
     {
@@ -344,7 +347,7 @@ public class MacroDeckServer : IObservable<RpcAction>
             _ => actionButton.Actions
         };
 
-        Task.Run(() =>
+        Run(() =>
         {
             foreach (var action in actions)
             {
@@ -352,11 +355,33 @@ public class MacroDeckServer : IObservable<RpcAction>
                 {
                     action.Trigger(clientId, actionButton);
                 }
-                catch { }
+                catch
+                {
+                    // ignored
+                }
             }
         });
     }
 
+    internal void SetAuthorized(string clientId, bool authorized)
+    {
+        var macroDeckClient = Clients.FirstOrDefault(client => client.ClientId == clientId);
+        if (macroDeckClient != null) SetAuthorized(macroDeckClient, authorized);
+    }
+
+    internal void SetAuthorized(MacroDeckClient macroDeckClient, bool authorized)
+    {
+        macroDeckClient.IsAuthorized = authorized;
+        var clientOfList = Clients.FirstOrDefault(x => x.ClientId == macroDeckClient.ClientId);
+        MacroDeckLogger.Trace("Authorized: " + clientOfList.IsAuthorized);
+    }
+
+
+    public void SetProfile(string clientId, MacroDeckProfile macroDeckProfile)
+    {
+        var macroDeckClient = Clients.FirstOrDefault(client => client.ClientId == clientId);
+        if (macroDeckClient != null) SetProfile(macroDeckClient, macroDeckProfile);
+    }
     /// <summary>
     /// Sets the current profile of a client
     /// </summary>
@@ -365,9 +390,23 @@ public class MacroDeckServer : IObservable<RpcAction>
     public void SetProfile(MacroDeckClient macroDeckClient, MacroDeckProfile macroDeckProfile)
     {
         macroDeckClient.Profile = macroDeckProfile;
-        macroDeckClient.DeviceMessage.SendConfiguration(macroDeckClient);
+        switch (macroDeckClient.ProtocolVersion)
+        {
+            case DeviceProtocolVersion.V2:
+                macroDeckClient.DeviceMessage.SendConfiguration(macroDeckClient);
+                break;
+            case DeviceProtocolVersion.V3:
+                SetFolder(macroDeckClient, macroDeckProfile.Folders.First());
+                break;
+        }
             
         SetFolder(macroDeckClient, macroDeckProfile.Folders[0]);
+    }
+
+    public void SetFolder(string clientId, MacroDeckFolder macroDeckFolder)
+    {
+        var macroDeckClient = Clients.FirstOrDefault(client => client.ClientId == clientId);
+        if (macroDeckClient != null) SetFolder(macroDeckClient, macroDeckFolder);
     }
 
     /// <summary>
@@ -378,7 +417,7 @@ public class MacroDeckServer : IObservable<RpcAction>
     public void SetFolder(MacroDeckClient macroDeckClient, MacroDeckFolder folder)
     {
         macroDeckClient.Folder = folder;
-        SendAllButtons(macroDeckClient);
+        Run(() => SendAllButtonsAsync(macroDeckClient));
         OnFolderChanged?.Invoke(macroDeckClient, EventArgs.Empty);
     }
 
@@ -390,7 +429,7 @@ public class MacroDeckServer : IObservable<RpcAction>
     {
         foreach (var macroDeckClient in Clients.FindAll(macroDeckClient => macroDeckClient.Folder.Equals(folder)))
         {
-            SendAllButtons(macroDeckClient);
+            Run(() => SendAllButtonsAsync(macroDeckClient));
         }
     }
 
@@ -398,9 +437,23 @@ public class MacroDeckServer : IObservable<RpcAction>
     /// Sends all buttons of the current folder to the client
     /// </summary>
     /// <param name="macroDeckClient"></param>
-    private void SendAllButtons(MacroDeckClient macroDeckClient)
+    internal static Task SendAllButtonsAsync(MacroDeckClient macroDeckClient)
     {
-        macroDeckClient?.DeviceMessage?.SendAllButtons(macroDeckClient);
+        if (macroDeckClient.Folder is null) return FromResult(0);
+        return Run(() =>
+        {
+            switch (macroDeckClient.ProtocolVersion)
+            {
+                case DeviceProtocolVersion.V2:
+                    macroDeckClient?.DeviceMessage?.SendAllButtons(macroDeckClient);
+                    break;
+                case DeviceProtocolVersion.V3:
+                    var pageDto = macroDeckClient.Folder.ToPageDto();
+                    var request = new Request("2.0", "SetPage", pageDto);
+                    macroDeckClient.SocketConnection.Send(JsonSerializer.Serialize(request));
+                    break;
+            }
+        });
     }
 
     /// <summary>
@@ -408,9 +461,22 @@ public class MacroDeckServer : IObservable<RpcAction>
     /// </summary>
     /// <param name="macroDeckClient"></param>
     /// <param name="actionButton"></param>
-    public void SendButton(MacroDeckClient macroDeckClient, ActionButton.ActionButton actionButton)
+    public static Task SendButtonAsync(MacroDeckClient macroDeckClient, ActionButton.ActionButton actionButton)
     {
-        macroDeckClient?.DeviceMessage?.UpdateButton(macroDeckClient, actionButton);
+        return Run(() =>
+        {
+            switch (macroDeckClient.ProtocolVersion)
+            {
+                case DeviceProtocolVersion.V2:
+                    macroDeckClient?.DeviceMessage?.UpdateButton(macroDeckClient, actionButton);
+                    break;
+                case DeviceProtocolVersion.V3:
+                    var widgetDto = actionButton.ToWidgetDto();
+                    var request = new Request("2.0", "UpdateWidget", widgetDto);
+                    macroDeckClient.SocketConnection.Send(JsonSerializer.Serialize(request));
+                    break;
+            }
+        });
     }
 
     /// <summary>
@@ -426,9 +492,9 @@ public class MacroDeckServer : IObservable<RpcAction>
     internal void UpdateState(ActionButton.ActionButton actionButton)
     {
         foreach (var macroDeckClient in Clients.FindAll(macroDeckClient =>
-                     macroDeckClient.Folder.ActionButtons.Contains(actionButton)))
+                     macroDeckClient.Folder?.ActionButtons?.Contains(actionButton) ?? false))
         {
-            SendButton(macroDeckClient, actionButton);
+            Run(() => SendButtonAsync(macroDeckClient, actionButton));
         }
     }
 
@@ -450,5 +516,9 @@ public class MacroDeckServer : IObservable<RpcAction>
     internal void Send(IWebSocketConnection socketConnection, JObject jObject)
     {
         socketConnection.Send(jObject.ToString());
+    }
+    public void InvokeOnDeviceConnectionStateChanged(MacroDeckClient macroDeckClient)
+    {
+        OnDeviceConnectionStateChanged?.Invoke(macroDeckClient, EventArgs.Empty);
     }
 }

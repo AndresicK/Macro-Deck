@@ -2,6 +2,7 @@
 using SuchByte.MacroDeck.Device;
 using SuchByte.MacroDeck.Enums;
 using SuchByte.MacroDeck.Folders;
+using SuchByte.MacroDeck.Logging;
 using SuchByte.MacroDeck.Model;
 using SuchByte.MacroDeck.Profiles;
 using SuchByte.MacroDeck.Server.DeviceMessage;
@@ -18,10 +19,12 @@ public class MacroDeckClient
     }
     
     public IWebSocketConnection SocketConnection { get; }
+    
+    public bool IsAuthorized { get; set; }
 
-    public MacroDeckFolder Folder { get; set; }
+    public MacroDeckFolder? Folder { get; set; }
 
-    public MacroDeckProfile Profile { get; set; }
+    public MacroDeckProfile? Profile { get; set; }
 
     public string ClientId { get; set; }
 

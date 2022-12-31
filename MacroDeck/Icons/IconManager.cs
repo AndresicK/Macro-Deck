@@ -143,17 +143,17 @@ public class IconManager
         }
     }
 
-    public static IconPack GetIconPackByName(string name)
+    public static IconPack? GetIconPackByName(string name)
     {
         return IconPacks.Find(iconPack => iconPack.Name == name);
     }
 
-    public static Icon GetIcon(IconPack iconPack, string iconId)
+    public static Icon? GetIcon(IconPack iconPack, string iconId)
     {
         return iconPack?.Icons.Find(icon => icon.IconId == iconId);
     }
 
-    public static Icon GetIconByString(string s)
+    public static Icon? GetIconByString(string s)
     {
         var iconPack = GetIconPackByName(s.Substring(0, s.IndexOf(".")));
         if (iconPack == null) return null;

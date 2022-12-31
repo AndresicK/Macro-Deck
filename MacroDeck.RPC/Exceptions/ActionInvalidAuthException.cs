@@ -10,7 +10,7 @@ namespace MacroDeck.RPC.Exceptions;
 public class ActionInvalidAuthException : ActionException
 {
     public ActionInvalidAuthException()
-        : base(ErrorCode.InvalidParams, "Auth failed due to wrong password or device blacklisted")
+        : base(ErrorCode.Generic, "Auth failed due to wrong password or device blacklisted")
     {
 
     }

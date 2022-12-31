@@ -7,8 +7,8 @@ public class MacroDeckDevice
 {
 
 
-    public string ClientId { get; set; }
-    public string DisplayName { get; set; }
+    public string? ClientId { get; set; }
+    public string? DisplayName { get; set; }
 
     [JsonIgnore]
     public bool Available { get {
@@ -23,10 +23,10 @@ public class MacroDeckDevice
 
     public bool Blocked { get; set; } = false;
 
-    public string ProfileId { get; set; }
+    public string? ProfileId { get; set; }
 
     public DeviceConfiguration Configuration { get; set; } = new();
 
-    public DeviceType DeviceType { get; set; }
+    public DeviceType DeviceType { get; set; } = DeviceType.Unknown;
 
 }

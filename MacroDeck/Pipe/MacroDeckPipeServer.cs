@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using SuchByte.MacroDeck.Logging;
 
-namespace SuchByte.MacroDeck.Pipes;
+namespace SuchByte.MacroDeck.Pipe;
 
 public delegate void DelegateMessage(string message);
 public class MacroDeckPipeServer

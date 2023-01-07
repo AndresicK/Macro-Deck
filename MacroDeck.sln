@@ -5,7 +5,13 @@ VisualStudioVersion = 17.3.32811.315
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MacroDeck", "MacroDeck\MacroDeck.csproj", "{119E86B4-9738-4684-AF88-CDBBF0315BBF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroDeck.Tests", "MacroDeck.Tests\MacroDeck.Tests.csproj", "{49F1CAC2-158D-45AC-B07C-52394B10A7E2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MacroDeck.Tests", "MacroDeck.Tests\MacroDeck.Tests.csproj", "{49F1CAC2-158D-45AC-B07C-52394B10A7E2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroDeck.Models", "MacroDeck.Models\MacroDeck.Models.csproj", "{29A9AD5A-D6C7-4D59-B346-17BBA6CDA7CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroDeck.Services", "MacroDeck.Services\MacroDeck.Services.csproj", "{DA4F9425-6691-401C-B976-BBA97FA2E9A8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacroDeck.Enums", "MacroDeck.Enums\MacroDeck.Enums.csproj", "{35A6265C-1F5C-43A5-A84E-E0DAC831F9D8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +37,30 @@ Global
 		{49F1CAC2-158D-45AC-B07C-52394B10A7E2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{49F1CAC2-158D-45AC-B07C-52394B10A7E2}.Release|x64.ActiveCfg = Release|Any CPU
 		{49F1CAC2-158D-45AC-B07C-52394B10A7E2}.Release|x64.Build.0 = Release|Any CPU
+		{29A9AD5A-D6C7-4D59-B346-17BBA6CDA7CE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{29A9AD5A-D6C7-4D59-B346-17BBA6CDA7CE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{29A9AD5A-D6C7-4D59-B346-17BBA6CDA7CE}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{29A9AD5A-D6C7-4D59-B346-17BBA6CDA7CE}.Debug|x64.Build.0 = Debug|Any CPU
+		{29A9AD5A-D6C7-4D59-B346-17BBA6CDA7CE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{29A9AD5A-D6C7-4D59-B346-17BBA6CDA7CE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{29A9AD5A-D6C7-4D59-B346-17BBA6CDA7CE}.Release|x64.ActiveCfg = Release|Any CPU
+		{29A9AD5A-D6C7-4D59-B346-17BBA6CDA7CE}.Release|x64.Build.0 = Release|Any CPU
+		{DA4F9425-6691-401C-B976-BBA97FA2E9A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DA4F9425-6691-401C-B976-BBA97FA2E9A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DA4F9425-6691-401C-B976-BBA97FA2E9A8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{DA4F9425-6691-401C-B976-BBA97FA2E9A8}.Debug|x64.Build.0 = Debug|Any CPU
+		{DA4F9425-6691-401C-B976-BBA97FA2E9A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DA4F9425-6691-401C-B976-BBA97FA2E9A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DA4F9425-6691-401C-B976-BBA97FA2E9A8}.Release|x64.ActiveCfg = Release|Any CPU
+		{DA4F9425-6691-401C-B976-BBA97FA2E9A8}.Release|x64.Build.0 = Release|Any CPU
+		{35A6265C-1F5C-43A5-A84E-E0DAC831F9D8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35A6265C-1F5C-43A5-A84E-E0DAC831F9D8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35A6265C-1F5C-43A5-A84E-E0DAC831F9D8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{35A6265C-1F5C-43A5-A84E-E0DAC831F9D8}.Debug|x64.Build.0 = Debug|Any CPU
+		{35A6265C-1F5C-43A5-A84E-E0DAC831F9D8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35A6265C-1F5C-43A5-A84E-E0DAC831F9D8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35A6265C-1F5C-43A5-A84E-E0DAC831F9D8}.Release|x64.ActiveCfg = Release|Any CPU
+		{35A6265C-1F5C-43A5-A84E-E0DAC831F9D8}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

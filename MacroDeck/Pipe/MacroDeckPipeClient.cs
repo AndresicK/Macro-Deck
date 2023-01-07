@@ -1,7 +1,7 @@
 ﻿using System.IO.Pipes;
 using System.Text;
 
-namespace SuchByte.MacroDeck.Pipes;
+namespace SuchByte.MacroDeck.Pipe;
 
 public class MacroDeckPipeClient
 {
